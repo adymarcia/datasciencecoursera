@@ -1,0 +1,107 @@
+---
+title: "Coursera - Machine Learning Final Assessment"
+author: "Adrian Marcia"
+date: "February 12, 2018"
+output: html_document
+---
+
+#Machine Learning Final Assessment
+
+##Overview
+
+###Project background
+Personal activity data is increasing in availability. While the quantity of data is increasing, a measure of quality is not readily available.
+Using data from 6 individuals, this project aims to determine which factors align to a successful barbell lift.
+
+###Data
+The training data was obtained from: https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+The test data was obtained from: https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+###Objective
+Determine which factors impact whether a barbell lift is performed correctly.
+
+### Library packages
+Installing and loading the packages for machine learning and plotting
+```{r}
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(RColorBrewer)
+```
+
+### Data retrieval
+Downloading and storing the data
+```{r}
+#Set seed at 1 to create reproducibility
+set.seed(1)
+
+trainUrl <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+testUrl <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+
+training_data <- read.csv(url(trainUrl), na.strings=c("NA","#DIV/0!",""))
+testing_data <- read.csv(url(testUrl), na.strings=c("NA","#DIV/0!",""))
+```
+
+### Data cleaning
+```{r}
+##Remove nearzerovariance variables
+nzv <- nearZeroVar(training_data, saveMetrics=TRUE)
+training_data <- training_data[,nzv$nzv==FALSE]
+
+##Remove the first column
+training_data <- training_data[c(-1)]
+
+##Remove variables with full of NA and make testing dataset consistent with training dataset in terms of available columns
+features <- names(training_data[,colSums(is.na(training_data)) == 0])[1:57]
+training_data<-training_data[,c(features,"classe")]
+testing_data<-testing_data[,c(features)]
+
+for (i in 1:length(testing_data) ) {
+  for(j in 1:length(training_data)) {
+    if( length( grep(names(training_data[i]), names(testing_data)[j]) ) ==1)  {
+      class(testing_data[j]) <- class(training_data[i])
+    }      
+  }      
+}
+
+testing_data <- rbind(training_data[2, -58] , testing_data) 
+testing_data <- testing_data[-1,]
+```
+
+##Data partitioning
+```{r}
+inTrain <- createDataPartition(y=training_data$classe, p=0.6, list=FALSE)
+mytraining <- training_data[inTrain, ]; mytesting <- training_data[-inTrain, ]
+dim(mytraining)
+```
+
+##Prediction with Decision Trees
+```{r}
+DT <- rpart(classe ~ ., data=mytraining, method="class")
+rpart.plot(DT)
+```
+
+##Confusion matrix
+```{r}
+DT2 <- predict(DT, mytesting, type = "class")
+
+#additional packages required for the confusion matrix
+#install.packages('e1071', dependencies=TRUE)
+library("e1071")
+
+confusionMatrix(DT2, mytesting$classe)
+```
+
+##Random forest prediction
+```{r}
+RF <- randomForest(classe ~. , data=mytraining)
+RF2 <- predict(RF, mytesting, type = "class")
+confusionMatrix(RF2, mytesting$classe)
+```
+
+##Out of sample error
+```{r}
+predictions <- predict(RF, testing_data, type = "class")
+predictions
+```
