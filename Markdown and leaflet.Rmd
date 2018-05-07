@@ -1,0 +1,30 @@
+---
+title: "Markdown and Leaflet"
+author: "Adrian Marcia"
+date: "May 7, 2018"
+output: html_document
+---
+#Developing data products assignment 1: Leaflet and Markdown
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Installing the required packages
+```{r}
+'install.packages("leaflet")'
+library(leaflet)
+```
+##Creating a map
+```{r}
+###The date today is Monday the 7th of May 2018
+```
+
+##Creating a map
+```{r}
+map <- leaflet() %>%
+addTiles() %>%
+setView(28.034088, -26.195246, 10, options = list()) %>%
+addMarkers(28.034088, -26.195246, popup = "My city, I love this city")
+map
+```
